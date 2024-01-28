@@ -2,63 +2,42 @@ package main
 
 import (
 	"fmt"
-	"math"
 )
 
-// interface I is a generic interface
-type I interface {
-	M()
-}
-
-// T is a custom type for string
-type T struct {
-	S string
-}
-
-// F is a custom type for float64
-type F float64
-
 func main() {
-	var i I //creating an instance of interface I
-
+	//empty interfaces
+	var i interface{} //i is the instance of an empty interface i(nil,nil)
 	describe(i)
-	//i.M() //"runtime error: invalid memory address or nil pointer dereference" aka "null pointer exeption"
-	//there is no method with <nil> type reciever
-	fmt.Println()
 
-	var t *T
-	i = t //passing nil value with type *T
+	i = 42 //i(42,int)
 	describe(i)
-	i.M()
+
+	i = "hello" //i("hello",string)
+	describe(i)
+
+	//fmt.Print() <-- takes any number of arguments of interface{} type
 	fmt.Println()
 
-	i = &T{"Hello"} //assigning value to the instance i
-	describe(i)     //calling a function to see content of i instance's value
-	i.M()           //calling a method to see i's value
-	fmt.Println()
+	//interface's type assertions
+	var j interface{} = "hello" //j("hello", string)
 
-	i = F(math.Pi) //
-	describe(i)    // same thing here
-	i.M()          //
-	fmt.Println()
+	s := j.(string) //s("hello",string)
+	fmt.Println(s)
 
+	s, ok := j.(string) //s == hello, ok == true
+	fmt.Println(s, ok)
+
+	f, ok := j.(float64) //f == 0.0, ok == false
+	fmt.Println(f, ok)
+
+	/*
+		f = j.(float64) //panic "interface conversion: interface {} is string, not float64"
+						//this happened bc statement j.(float64) asserts that value j holds float64 type, but actually it holds string type; do not test like this
+		fmt.Println(f)
+	*/
 }
 
-// method M() recieves a pointer to custom string and prints it's value
-func (t *T) M() {
-	if t == nil {
-		fmt.Println("<nil>")
-		return
-	}
-	fmt.Println(t.S)
-}
-
-// method M() recieves a custom float64 and prints the value of it's copy
-func (f F) M() {
-	fmt.Println(f)
-}
-
-// function describe() prints value and type of the instance of an interface I
-func describe(i I) {
-	fmt.Printf("Interface instance's value: %v, type: %T)\n", i, i)
+// function describe() prints value and type of interface{} instance
+func describe(i interface{}) {
+	fmt.Printf("Interface instance value: %v, type: %T\n", i, i)
 }
