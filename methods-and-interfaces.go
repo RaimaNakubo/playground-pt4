@@ -5,25 +5,55 @@ import (
 	"math"
 )
 
-// Vertex is a custom data type
-type Vertex struct {
-	X, Y float64
+// interface Abser holds signature for methods which calculate absolute values
+type Abser interface {
+	Abs() float64
+}
+
+// interface I is declared implicitly, it holds signature of some generic method M(); returning value is not present
+type I interface {
+	M()
+}
+
+// custom type for string
+type T struct {
+	S string
 }
 
 // custom type for float64
 type MyFloat float64
 
-// method Abs() recieves a Vertex and returns float64 copy
-func (v Vertex) Abs() float64 {
-	return math.Sqrt(v.X*v.X + v.Y*v.Y)
+// Vertex{X,Y} type
+type Vertex struct {
+	X, Y float64
 }
 
-// here Abs() is just a function; it has no reciever, but works exactly the same
-func Abs(v Vertex) float64 {
-	return math.Sqrt(v.X*v.X + v.Y*v.Y)
+func main() {
+	var a Abser               //a is the instance of Abser interface
+	f := MyFloat(-math.Sqrt2) //f is the instance of a custom float64
+	v := Vertex{3, 4}         //v is the instance of a Vertex
+
+	a = f //f custom float64 implements Abs() method for a Abser, so a MyFloat implements Abser interface
+	fmt.Println(a.Abs())
+
+	a = &v //v *Vertex implements Abs() method for a Abser, so a *Vertex implements Abser interface
+	fmt.Println(a.Abs())
+
+	/*
+		a = v //cannot use v (variable of type Vertex) as Abser value in assignment: Vertex does not implement Abser (method Abs has pointer receiver)compilerInvalidIfaceAssign)
+		fmt.Println(a.Abs())
+
+		There is a compile error on the line 33.  v Vertex cannot implement Abser interface bc v Vertex is not the type of any existing recievers.
+		Method Abs() recieves eiter custom float64 or pointer to a Vertex, and v is a Vertex type, not *Vertex nor custom float64, so v Vertex cannot
+		be passed as a reciever, therefore cannot implement Abser interface.
+	*/
+	fmt.Println()
+
+	var i I = T{"hello"} //implementing implicit interface I with custom string of T type; instance i of interface I is no longer implicit interface
+	i.M()                //so method M() is no longer generic bc M() implementation for i explicit interface is present
 }
 
-// method Abs() recieves a custom Float64 and returns float64 absolute value
+// method Abs() recieves custom float64 value, calculates absolute value of the reciever and returns result as float64
 func (f MyFloat) Abs() float64 {
 	if f < 0 {
 		return float64(-f)
@@ -31,71 +61,13 @@ func (f MyFloat) Abs() float64 {
 	return float64(f)
 }
 
-// method pAbs( recieves a point to Vertex and returns float64 absolute value)
-func (v *Vertex) pAbs() float64 {
+// method Abs() recieves point to Vertex, calculates absolure value of a Vertex and returns result as float64
+func (v *Vertex) Abs() float64 {
 	return math.Sqrt(v.X*v.X + v.Y*v.Y)
 }
 
-// method Scale() recieves a point to Vertex, float64 as argument and returns nothing
-func (v *Vertex) Scale(f float64) {
-	v.X *= f
-	v.Y *= f
-}
-
-// here Scale() is just a function; it has no reciever, but works exactly the same
-func Scale(v *Vertex, f float64) {
-	v.X *= f
-	v.Y *= f
-}
-
-func main() {
-	v := Vertex{3, 4}
-	fmt.Println(v.Abs()) //calling a method for a v Vertex(struct) reciever of a method
-	fmt.Println()
-
-	fmt.Println(Abs(v)) //calling a function regularly and passing v Vertex argument in
-	fmt.Println()
-
-	f := MyFloat(-math.Sqrt2)
-	fmt.Println(f.Abs()) //calling a method for a f MyFloat(no-struct) reciever of a method
-	fmt.Println()
-
-	v.Scale(10)          //calling a method for a v *Vertex reciever of a method, changing the original v Vertex
-	fmt.Println(v.Abs()) //at this point v is Vertex{30, 40}
-	fmt.Println()
-
-	Scale(&v, 10) //calling a function regularly and passing address of v Vertex argument in
-	fmt.Println(Abs(v))
-	fmt.Println()
-
-	//Methods and pointer indirection
-	value := Vertex{3, 4.5}
-	value.Scale(2)     //calling a method for actual value(not for value's adress); Go's interpretetion would be (&value).Scale(2)
-	Scale(&value, 10)  //calling a function passing address of the actual value as argument
-	fmt.Println(value) //both calls works completely fine resulting: value Vertex {60, 90}
-	fmt.Println()
-
-	pointer := &Vertex{0.2, 1}
-	pointer.Scale(2)      //calling a method for value's address
-	Scale(pointer, 10)    //calling a function passing actual pointer to the value as argument
-	fmt.Println(pointer)  //both calls works completely fine resulting: address of a Vertex{4, 20} somewhere in the memory
-	fmt.Println(*pointer) //adding * results value(Vertex{4, 20}) than lies in a pointer *Vertex
-	fmt.Println(&pointer) //adding & results memory address of a Vertex{4, 20}
-	fmt.Println()
-
-	value = Vertex{3, 4}
-	fmt.Println(value.Abs()) //calling a method that expects to recieve value and recieves value
-	fmt.Println(Abs(value))  //calling a function that expects to pass value as argument and passing the value as argument
-	fmt.Println()            //regular behaviour above
-
-	pointer = &Vertex{4, 3}
-	fmt.Println(pointer.Abs()) //calling a method that expects to recieve value and recieves pointer to a value; Go's interpretation would be (*pointer).Abs()
-	fmt.Println(Abs(*pointer)) //calling a function that expects to pass value as argument and passing a pointer to a pointer to a value; compiler adds * automaticly
-	fmt.Println()              //irregular behaviour above
-
-	//choosing a value or a pointer reciever
-	pointer = &Vertex{3, 4}
-	fmt.Printf("Vertex before scaling: %+v, Absolute value: %v\n", pointer, pointer.pAbs()) //method recieves a point to Vertex even if it does not need to change the reciever
-	pointer.Scale(3)                                                                        //method recieves a point to Vertex and changes values of a Vertex
-	fmt.Printf("Vector after scaling: %+v, Absolute value: %v\n", pointer, pointer.pAbs())  //method doesn't need to change the reciever again but still recieves a pointer to Vertex
+// method M() recieves some "value" T and prints the result of a method S() call from copy of a recieved value
+// type T implements interface I via adding some specifics to the generic method M(), reciever type in this case; no explicit declaration of implementation needed
+func (t T) M() {
+	fmt.Println(t.S)
 }
