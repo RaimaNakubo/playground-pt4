@@ -1,31 +1,35 @@
-/*
-Exercise: Stringers
-Make the IPAddr type implement fmt.Stringer to print the address as a dotted quad.
-
-For instance, IPAddr{1, 2, 3, 4} should print as "1.2.3.4".
-*/
-
 package main
 
 import (
 	"fmt"
+	"time"
 )
 
-// IPAddr represents IP-address value
-type IPAddr [4]byte
+// MyError describes information about occured error as: time of occuring(When) and error message(What)
+type MyError struct {
+	When time.Time
+	What string
+}
 
 func main() {
-	hosts := map[string]IPAddr{
-		"loopback":  {127, 0, 0, 1},
-		"googleDns": {8, 8, 8, 8},
-	}
-
-	for name, ip := range hosts {
-		fmt.Printf("%v: %v\n", name, ip)
+	//errors
+	if err := run(); err != nil { //if an error occured in run() call
+		fmt.Println(err) //display information about error
 	}
 }
 
-// method String() implements a Stringer for type IPAddr
-func (ip IPAddr) String() string {
-	return fmt.Sprintf("%v.%v.%v.%v", ip[0], ip[1], ip[2], ip[3])
+// method Error() implements "Errorer" for MyError type;
+// it recieves a pointer to an error and prints formatted string with information about error occured
+func (e *MyError) Error() string {
+	return fmt.Sprintf("at %v, %s", e.When, e.What)
+}
+
+// function run() returns address of an instance of MyError;
+// instace of MyError contains current time and "error message";
+// run() is used as example case to test error message
+func run() error {
+	return &MyError{
+		time.Now(),
+		"An error occured",
+	}
 }
