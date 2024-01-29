@@ -1,44 +1,63 @@
 /*
-Exercise: Readers
-Implement a Reader type that emits an infinite stream of the ASCII character 'A'.
+
+Exercise: rot13Reader
+A common pattern is an io.Reader that wraps another io.Reader, modifying the stream in some way.
+
+For example, the gzip.NewReader function takes an io.Reader (a stream of compressed data) and returns a *gzip.Reader that also implements io.Reader (a stream of the decompressed data).
+
+Implement a rot13Reader that implements io.Reader and reads from an io.Reader, modifying the stream by applying the rot13 substitution cipher to all alphabetical characters.
+
+The rot13Reader type is provided for you. Make it an io.Reader by implementing its Read method.
 */
 
 package main
 
 import (
-	"golang.org/x/tour/reader"
+	"io"
+	"os"
+	"strings"
 )
 
-type MyReader struct{}
-
-func main() {
-	reader.Validate(MyReader{})
+// rot13Reader is a wrapper for Reader which implements Read() method
+type rot13Reader struct {
+	r io.Reader
 }
 
-// method Read() implements io.Reader interface for MyReader type;
-// this implementation replaces value of every byte read by Reader with 'A' ASCII character value (which is 65 int)
-// and returns number of bytes read by Reader plus nil(success) error message
-func (MyReader) Read(b []byte) (int, error) {
-	var bytesRead int = 0
+func main() {
+	s := strings.NewReader("Lbh penpxrq gur pbqr!") //s is a Reader instace initialized by rot13-ciphered string
+	r := rot13Reader{s}                             //wrapping Reader in rot13 Reader, so r is an instance of rot13 Reader { Reader }
+	io.Copy(os.Stdout, &r)                          //copying data from rot13 Reader to standert outut channel until EOF or error
 
-	for i := range b {
-		b[i] = 'A'
-		bytesRead += 1
-		//fmt.Println("Current i: ", i)
-		//fmt.Println("Current b[i]: ", b[i])
+}
+
+// method Read() implements Reader for rot13Reader type;
+// it recieves a pointer to rot13Reader instance of io.Reader instance,
+// deciphers bytes from io.Reader instance through []byte argument,
+// and returns number of bytes read from io.Reader instance plus error message
+func (r13r *rot13Reader) Read(b []byte) (int, error) {
+
+	inputAlphabet := []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+	outputAlphabet := []byte("NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm")
+
+	n, err := r13r.r.Read(b)
+
+	//I know that nested "for" loops is really bad idea
+	//I should've used map or inline calculation (like this: b[i] = (v-'a'+13)%26 + 'a') instead
+	//but idc now, it was my firs idea
+	for i, v := range b[:n] {
+		for j, vc := range inputAlphabet {
+			if vc == v {
+				b[i] = outputAlphabet[j]
+			}
+		}
 	}
 
-	//fmt.Println("bytes read counter: ", bytesRead)
-	//fmt.Println("length of slice b:", len(b))
-	//fmt.Println("capacity of slice b:", cap(b))
-	//fmt.Println("Content of slice b: ", b)
-	return bytesRead, nil // here you can use len(b) instead of bytesRead and get rid of it completely as len(b) returs length of a b slice
+	return n, err
 
 	/*
-		Reader always should have a slice of bytes as argument, data read by Reader goes into this slice.
-			You can manipulate the data read in slice.
-		Reader always should have two returning values: number of bytes it have read as integer and error message.
-		Also reader can have a reciver as Type(!not instance) of variable. It means that Reader is implemented by this type.
-			All instances of readers of that Type calling method Read() would use this specific implementation.
+		rot13 is a letter substitution cipher.
+		Every character in rot13 string has to be replaced with the 13th letter after it in the latin alphabet.
+		Because there is 26 (2*13) letters in the basic latin alphabet, rot13 is it's own inverse.
+		That means, to undo rot13 cypher the same algorythm has to be applied.
 	*/
 }
